@@ -332,7 +332,8 @@ Vivus.prototype.mapping = function() {
     }
     pathObj = {
       el: path,
-      length: Math.ceil(path.getTotalLength())
+      length: Math.ceil(path.getTotalLength()),
+      strokeDashValue: path.getAttribute('stroke-dasharray')
     };
     // Test if the path length is correct
     if (isNaN(pathObj.length)) {
@@ -491,7 +492,19 @@ Vivus.prototype.trace = function() {
     progress = this.pathTimingFunction(Math.max(0, Math.min(1, progress)));
     if (path.progress !== progress) {
       path.progress = progress;
-      path.el.style.strokeDashoffset = Math.floor(path.length * (1 - progress));
+
+      if (path.strokeDashValue) {
+        const strokes = new Array(Math.round((path.length * (progress)) / 2) * 2 + 1)
+        let strokeDasharray = strokes.fill(0).map(() => ` ${path.strokeDashValue} `)
+        if (strokeDasharray.length > 0) {
+          strokeDasharray = strokeDasharray.reduce((acc, current) => acc + current)
+          path.el.style.strokeDasharray = `${strokeDasharray} ${Math.floor(path.length * (1 - progress))}`
+          path.el.style.strokeDashoffset = 0
+        }
+      } else {
+        path.el.style.strokeDashoffset = Math.floor(path.length * (1 - progress));
+      }
+   
       this.renderPath(i);
     }
   }
