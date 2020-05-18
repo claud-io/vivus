@@ -358,19 +358,19 @@ function Vivus(element, options, callback) {
  * It always take a number as parameter (between 0 to 1) then
  * return a number (between 0 and 1)
  */
-Vivus.LINEAR = function(x) {
+Vivus.LINEAR = function (x) {
   return x;
 };
-Vivus.EASE = function(x) {
+Vivus.EASE = function (x) {
   return -Math.cos(x * Math.PI) / 2 + 0.5;
 };
-Vivus.EASE_OUT = function(x) {
+Vivus.EASE_OUT = function (x) {
   return 1 - Math.pow(1 - x, 3);
 };
-Vivus.EASE_IN = function(x) {
+Vivus.EASE_IN = function (x) {
   return Math.pow(x, 3);
 };
-Vivus.EASE_OUT_BOUNCE = function(x) {
+Vivus.EASE_OUT_BOUNCE = function (x) {
   var base = -Math.cos(x * (0.5 * Math.PI)) + 1,
     rate = Math.pow(base, 1.5),
     rateR = Math.pow(1 - x, 2),
@@ -390,7 +390,7 @@ Vivus.EASE_OUT_BOUNCE = function(x) {
  *
  * @param {DOM|String}   element  SVG Dom element or id of it
  */
-Vivus.prototype.setElement = function(element, options) {
+Vivus.prototype.setElement = function (element, options) {
   var onLoad, self;
 
   // Basic check
@@ -412,7 +412,7 @@ Vivus.prototype.setElement = function(element, options) {
   // Load the SVG with XMLHttpRequest and extract the SVG
   if (options && options.file) {
     self = this;
-    onLoad = function() {
+    onLoad = function () {
       var domSandbox = document.createElement('div');
       domSandbox.innerHTML = this.responseText;
 
@@ -420,7 +420,7 @@ Vivus.prototype.setElement = function(element, options) {
       if (!svgTag) {
         throw new Error(
           'Vivus [load]: Cannot find the SVG in the loaded file : ' +
-            options.file
+          options.file
         );
       }
 
@@ -450,7 +450,7 @@ Vivus.prototype.setElement = function(element, options) {
 
     case window.HTMLObjectElement:
       self = this;
-      onLoad = function(e) {
+      onLoad = function (e) {
         if (self.isReady) {
           return;
         }
@@ -493,7 +493,7 @@ Vivus.prototype.setElement = function(element, options) {
  *
  * @param  {object} options Object from the constructor
  */
-Vivus.prototype.setOptions = function(options) {
+Vivus.prototype.setOptions = function (options) {
   var allowedTypes = [
     'delayed',
     'sync',
@@ -518,8 +518,8 @@ Vivus.prototype.setOptions = function(options) {
   if (options.type && allowedTypes.indexOf(options.type) === -1) {
     throw new Error(
       'Vivus [constructor]: ' +
-        options.type +
-        ' is not an existing animation `type`'
+      options.type +
+      ' is not an existing animation `type`'
     );
   } else {
     this.type = options.type || allowedTypes[0];
@@ -529,8 +529,8 @@ Vivus.prototype.setOptions = function(options) {
   if (options.start && allowedStarts.indexOf(options.start) === -1) {
     throw new Error(
       'Vivus [constructor]: ' +
-        options.start +
-        ' is not an existing `start` option'
+      options.start +
+      ' is not an existing `start` option'
     );
   } else {
     this.start = options.start || allowedStarts[0];
@@ -571,14 +571,14 @@ Vivus.prototype.setOptions = function(options) {
  *
  * @param  {Function} callback Callback for the animation end
  */
-Vivus.prototype.setCallback = function(callback) {
+Vivus.prototype.setCallback = function (callback) {
   // Basic check
   if (!!callback && callback.constructor !== Function) {
     throw new Error(
       'Vivus [constructor]: "callback" parameter must be a function'
     );
   }
-  this.callback = callback || function() {};
+  this.callback = callback || function () { };
 };
 
 /**
@@ -606,7 +606,7 @@ Vivus.prototype.setCallback = function(callback) {
  * ```
  *
  */
-Vivus.prototype.mapping = function() {
+Vivus.prototype.mapping = function () {
   var i, paths, path, pAttrs, pathObj, totalLength, lengthMeter, timePoint;
   timePoint = totalLength = lengthMeter = 0;
   paths = this.el.querySelectorAll('path');
@@ -618,7 +618,8 @@ Vivus.prototype.mapping = function() {
     }
     pathObj = {
       el: path,
-      length: Math.ceil(path.getTotalLength())
+      length: Math.ceil(path.getTotalLength()),
+      strokeDashValue: path.getAttribute('stroke-dasharray')
     };
     // Test if the path length is correct
     if (isNaN(pathObj.length)) {
@@ -724,7 +725,7 @@ Vivus.prototype.mapping = function() {
  * trigger the Vivus callback.
  *
  */
-Vivus.prototype.drawer = function() {
+Vivus.prototype.drawer = function () {
   var self = this;
   this.currentFrame += this.speed;
 
@@ -740,7 +741,7 @@ Vivus.prototype.drawer = function() {
     }
   } else {
     this.trace();
-    this.handle = requestAnimFrame(function() {
+    this.handle = requestAnimFrame(function () {
       self.drawer();
     });
     return;
@@ -766,7 +767,7 @@ Vivus.prototype.drawer = function() {
  * be improved if the animation couldn't be played forward.
  *
  */
-Vivus.prototype.trace = function() {
+Vivus.prototype.trace = function () {
   var i, progress, path, currentFrame;
   currentFrame =
     this.animTimingFunction(this.currentFrame / this.frameLength) *
@@ -777,7 +778,19 @@ Vivus.prototype.trace = function() {
     progress = this.pathTimingFunction(Math.max(0, Math.min(1, progress)));
     if (path.progress !== progress) {
       path.progress = progress;
-      path.el.style.strokeDashoffset = Math.floor(path.length * (1 - progress));
+
+      if (path.strokeDashValue) {
+        var strokes = new Array(Math.round((path.length * (progress)) / 2) * 2 + 1);
+        var strokeDasharray = strokes.fill(0).map(function () { return ' ' + path.strokeDashValue + ' '; });
+        if (strokeDasharray.length > 0) {
+          strokeDasharray = strokeDasharray.reduce(function (acc, current) { return acc + current; });
+          path.el.style.strokeDasharray = ' ' + strokeDasharray + ' ' + Math.floor(path.length * (1 - progress));
+          path.el.style.strokeDashoffset = 0;
+        }
+      } else {
+        path.el.style.strokeDashoffset = Math.floor(path.length * (1 - progress));
+      }
+
       this.renderPath(i);
     }
   }
@@ -795,7 +808,7 @@ Vivus.prototype.trace = function() {
  *
  * @param  {Number} index Path index
  */
-Vivus.prototype.renderPath = function(index) {
+Vivus.prototype.renderPath = function (index) {
   if (this.forceRender && this.map && this.map[index]) {
     var pathObj = this.map[index],
       newPath = pathObj.el.cloneNode(true);
@@ -813,7 +826,7 @@ Vivus.prototype.renderPath = function(index) {
  * the end of the loading to initialise.
  *
  */
-Vivus.prototype.init = function() {
+Vivus.prototype.init = function () {
   // Set object variables
   this.frameLength = 0;
   this.currentFrame = 0;
@@ -838,7 +851,7 @@ Vivus.prototype.init = function() {
  * Even if technically, this is impossible.
  *
  */
-Vivus.prototype.starter = function() {
+Vivus.prototype.starter = function () {
   switch (this.start) {
     case 'manual':
       return;
@@ -849,7 +862,7 @@ Vivus.prototype.starter = function() {
 
     case 'inViewport':
       var self = this,
-        listener = function() {
+        listener = function () {
           if (self.isInViewport(self.parentEl, 1)) {
             self.play();
             window.removeEventListener('scroll', listener);
@@ -871,12 +884,12 @@ Vivus.prototype.starter = function() {
  * three different states: 'start', 'progress', 'end'.
  * @return {string} Instance status
  */
-Vivus.prototype.getStatus = function() {
+Vivus.prototype.getStatus = function () {
   return this.currentFrame === 0
     ? 'start'
     : this.currentFrame === this.frameLength
-    ? 'end'
-    : 'progress';
+      ? 'end'
+      : 'progress';
 };
 
 /**
@@ -886,7 +899,7 @@ Vivus.prototype.getStatus = function() {
  * make it start from start.
  *
  */
-Vivus.prototype.reset = function() {
+Vivus.prototype.reset = function () {
   return this.setFrameProgress(0);
 };
 
@@ -897,7 +910,7 @@ Vivus.prototype.reset = function() {
  * But just make it start from the end.
  *
  */
-Vivus.prototype.finish = function() {
+Vivus.prototype.finish = function () {
   return this.setFrameProgress(1);
 };
 
@@ -906,7 +919,7 @@ Vivus.prototype.finish = function() {
  *
  * @param {number} progress Level of progress to set
  */
-Vivus.prototype.setFrameProgress = function(progress) {
+Vivus.prototype.setFrameProgress = function (progress) {
   progress = Math.min(1, Math.max(0, progress));
   this.currentFrame = Math.round(this.frameLength * progress);
   this.trace();
@@ -925,7 +938,7 @@ Vivus.prototype.setFrameProgress = function(progress) {
  *
  * @param  {number} speed Animation speed [optional]
  */
-Vivus.prototype.play = function(speed, callback) {
+Vivus.prototype.play = function (speed, callback) {
   this.instanceCallback = null;
 
   if (speed && typeof speed === 'function') {
@@ -951,7 +964,7 @@ Vivus.prototype.play = function(speed, callback) {
  * Should not trigger any error.
  *
  */
-Vivus.prototype.stop = function() {
+Vivus.prototype.stop = function () {
   if (this.handle) {
     cancelAnimFrame(this.handle);
     this.handle = null;
@@ -965,7 +978,7 @@ Vivus.prototype.stop = function() {
  * path tags
  *
  */
-Vivus.prototype.destroy = function() {
+Vivus.prototype.destroy = function () {
   this.stop();
   var i, path;
   for (i = 0; i < this.map.length; i++) {
@@ -996,7 +1009,7 @@ Vivus.prototype.destroy = function() {
  * Other improvments are planned. Like detecting
  * is the path got a stroke or a valid opacity.
  */
-Vivus.prototype.isInvisible = function(el) {
+Vivus.prototype.isInvisible = function (el) {
   var rect,
     ignoreAttr = el.getAttribute('data-ignore');
 
@@ -1019,7 +1032,7 @@ Vivus.prototype.isInvisible = function(el) {
  * @param  {object} element DOM element to parse
  * @return {object}         Object of attributes
  */
-Vivus.prototype.parseAttr = function(element) {
+Vivus.prototype.parseAttr = function (element) {
   var attr,
     output = {};
   if (element && element.attributes) {
@@ -1038,7 +1051,7 @@ Vivus.prototype.parseAttr = function(element) {
  * @param  {number} h  Percentage of height
  * @return {boolean}
  */
-Vivus.prototype.isInViewport = function(el, h) {
+Vivus.prototype.isInViewport = function (el, h) {
   var scrolled = this.scrollY(),
     viewed = scrolled + this.getViewportH(),
     elBCR = el.getBoundingClientRect(),
@@ -1059,7 +1072,7 @@ Vivus.prototype.isInViewport = function(el, h) {
  *
  * @return {integer} Viewport height
  */
-Vivus.prototype.getViewportH = function() {
+Vivus.prototype.getViewportH = function () {
   var client = this.docElem.clientHeight,
     inner = window.innerHeight;
 
@@ -1075,11 +1088,11 @@ Vivus.prototype.getViewportH = function() {
  *
  * @return {integer} Page Y offset
  */
-Vivus.prototype.scrollY = function() {
+Vivus.prototype.scrollY = function () {
   return window.pageYOffset || this.docElem.scrollTop;
 };
 
-setupEnv = function() {
+setupEnv = function () {
   if (Vivus.prototype.docElem) {
     return;
   }
@@ -1096,14 +1109,14 @@ setupEnv = function() {
    * `setTimeout` function for deprecated browsers.
    *
    */
-  requestAnimFrame = (function() {
+  requestAnimFrame = (function () {
     return (
       window.requestAnimationFrame ||
       window.webkitRequestAnimationFrame ||
       window.mozRequestAnimationFrame ||
       window.oRequestAnimationFrame ||
       window.msRequestAnimationFrame ||
-      function(/* function */ callback) {
+      function (/* function */ callback) {
         return window.setTimeout(callback, 1000 / 60);
       }
     );
@@ -1114,14 +1127,14 @@ setupEnv = function() {
    * `cancelTimeout` function for deprecated browsers.
    *
    */
-  cancelAnimFrame = (function() {
+  cancelAnimFrame = (function () {
     return (
       window.cancelAnimationFrame ||
       window.webkitCancelAnimationFrame ||
       window.mozCancelAnimationFrame ||
       window.oCancelAnimationFrame ||
       window.msCancelAnimationFrame ||
-      function(id) {
+      function (id) {
         return window.clearTimeout(id);
       }
     );
@@ -1139,7 +1152,7 @@ setupEnv = function() {
  * @return {number}
  *
  */
-parsePositiveInt = function(value, defaultValue) {
+parsePositiveInt = function (value, defaultValue) {
   var output = parseInt(value, 10);
   return output >= 0 ? output : defaultValue;
 };
