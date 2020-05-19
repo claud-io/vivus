@@ -780,13 +780,17 @@ Vivus.prototype.trace = function () {
       path.progress = progress;
 
       if (path.strokeDashValue) {
+        var strokeBase = path.strokeDashValue.split(',').length % 2 === 0 ? '1 ' : ' ';
+
         var strokes = new Array(Math.round((path.length * (progress)) / 2) * 2 + 1);
         var strokeDasharray = strokes.fill(0).map(function () { return ' ' + path.strokeDashValue + ' '; });
         if (strokeDasharray.length > 0) {
           strokeDasharray = strokeDasharray.reduce(function (acc, current) { return acc + current; });
-          path.el.style.strokeDasharray = ' ' + strokeDasharray + ' ' + Math.floor(path.length * (1 - progress));
+
+          path.el.style.strokeDasharray = strokeDasharray + ' ' + strokeBase + ' ' + Math.floor(path.length * (1 - progress));
           path.el.style.strokeDashoffset = 0;
         }
+
       } else {
         path.el.style.strokeDashoffset = Math.floor(path.length * (1 - progress));
       }
