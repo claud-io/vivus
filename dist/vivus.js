@@ -780,7 +780,7 @@ Vivus.prototype.trace = function () {
       path.progress = progress;
 
       if (path.strokeDashValue) {
-        var strokeBase = path.strokeDashValue.split(',').length % 2 === 0 ? '1 ' : ' ';
+        var strokeBase = path.strokeDashValue.split(/,| /).length % 2 === 0 ? '1 ' : ' ';
 
         var strokes = new Array(Math.round((path.length * (progress)) / 2) * 2 + 1);
         var strokeDasharray = strokes.fill(0).map(function () { return ' ' + path.strokeDashValue + ' '; });
